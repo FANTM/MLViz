@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "MLViz"
+version = "0.1.0"
+description = "Collect, train, and deploy basic EMG based ML models all from one simple GUI."
+authors = ["Ezra Boley <hello@getfantm.com>", "Finn Kuusisto <hello@getfantm.com>"]
+license = "GPL-3.0"
+
+[tool.poetry.dependencies]
+python = ">=3.6,<4.0"
+pydevlpr-protocol = "^0.1.0"
+PySimpleGUI = "^4.47.0"
+devlprd = "^0.2.2"
+matplotlib = "^3.4.3"
+pydevlpr = "^0.2.2"
+ttkthemes = "^3.2.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
