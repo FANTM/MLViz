@@ -41,7 +41,7 @@ class PlotManager:
         self._plots[index][PlotManager.SUBPLOT_KEY].plot(data, color='purple')
         return self
 
-    def get_size_pixels(self, index: int) -> Tuple(float, float):
+    def get_size_pixels(self, index: int) -> Tuple[float, float]:
         (w, h) = self._plots[index][PlotManager.FIGURE_KEY].get_size_inches()
         return (w * PlotManager.DPI, h * PlotManager.DPI)
 
