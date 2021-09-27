@@ -48,3 +48,4 @@ class PlotManager:
     def set_size_pixels(self, index: int, w: int, h: int) -> Figure:
         self._plots[index][PlotManager.FIGURE_KEY].set_size_inches(float(w) / PlotManager.DPI, float(h) / PlotManager.DPI)
         return self.fig(index)
+        

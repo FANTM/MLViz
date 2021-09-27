@@ -13,11 +13,18 @@ class LayoutManager:
         FILENAME = 'filename'
         DATA_MANAGER = 'datamanager'
         NUM_DEVLPRS = 'numdevlprs'
+        LABEL_BUTTON_TEMPLATE = 'labelbtn{}'
+        LABEL_INPUT_TEMPLATE = 'labelinput{}'
+        BTN_PRESS = 'press'
+        BTN_RLSE  = 'release'
+        CONNECT_TEMPLATE = 'connect{}'
+        DISCONNECT_TEMPLATE = 'disconnect{}'
 
     FONT_FAMILY = 'Helvetica'
     FONT_SIZES = {'h1': 24, 'h2': 20, 'h3': 16,
                   'h4': 12, 'p': 10, 'button': 12}
     NUM_ROWS = 3
+    NUM_LABELS = 5
 
     def __init__(self):
         self._layout = [
@@ -81,8 +88,8 @@ class LayoutManager:
                                 LayoutManager.TopicSelect(index), LayoutManager.PinSelect(index), 
                             ],
                             [
-                                    LayoutManager.Button('Connect', size=(12, 1), key='connect_{}'.format(index)),
-                                    LayoutManager.Button('Disconnect', size=(12, 1), key='disconnect_{}'.format(index))
+                                    LayoutManager.Button('Connect', size=(12, 1), key=LayoutManager.Key.CONNECT_TEMPLATE.format(index)),
+                                    LayoutManager.Button('Disconnect', size=(12, 1), key=LayoutManager.Key.DISCONNECT_TEMPLATE.format(index))
                             ],
                         ]),
                         sg.VerticalSeparator(),
@@ -96,7 +103,7 @@ class LayoutManager:
     
     @staticmethod
     def LabelRow(index, default_input):
-        return [LayoutManager.Button("Label {}".format(index)), sg.Input(default_input, 
+        return [LayoutManager.Button("Label {}".format(index), key=LayoutManager.Key.LABEL_BUTTON_TEMPLATE.format(index)), sg.Input(default_input, key=LayoutManager.Key.LABEL_INPUT_TEMPLATE.format(index),
                 size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button']))]
 
     @staticmethod
@@ -105,14 +112,10 @@ class LayoutManager:
             sg.Frame("Data Manager", [
                 *LayoutManager.NumPinSlider(),
                 [sg.Text('Output Filename')],
-                [sg.Input('recording.csv', key=LayoutManager.Key.FILENAME, size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button'])), 
+                [sg.Input('data/recording.csv', key=LayoutManager.Key.FILENAME, size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button'])), 
                     sg.FileBrowse( font=(LayoutManager.FONT_FAMILY, 
                                         LayoutManager.FONT_SIZES['button']))],
                 [sg.Text('Labels')],
-                LayoutManager.LabelRow(1, 'fist'),
-                LayoutManager.LabelRow(2, 'thumb'),
-                LayoutManager.LabelRow(3, 'index'),
-                LayoutManager.LabelRow(4, 'four'),
-                LayoutManager.LabelRow(5, 'custom'),           
+                *[LayoutManager.LabelRow(i, 'label_{}'.format(i)) for i in range(0, LayoutManager.NUM_LABELS)],           
                 [LayoutManager.Button('Start', key=LayoutManager.Key.RECORD), LayoutManager.Button('Pause', key=LayoutManager.Key.STOP), LayoutManager.Button('Clear', key=LayoutManager.Key.CLEAR), LayoutManager.Button('Save', key=LayoutManager.Key.SAVE), LayoutManager.Button('Exit')]
         ])]], vertical_alignment='top', key=LayoutManager.Key.DATA_MANAGER)
