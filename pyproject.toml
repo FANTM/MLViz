@@ -6,12 +6,12 @@ authors = ["Ezra Boley <hello@getfantm.com>", "Finn Kuusisto <hello@getfantm.com
 license = "GPL-3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.6,<4.0"
+python = ">=3.7,<3.11"
 pydevlpr-protocol = "^0.1.0"
 PySimpleGUI = "^4.47.0"
-devlprd = "^0.2.2"
+devlprd = ">=0.3.1"
 matplotlib = "^3.4.3"
-pydevlpr = "^0.2.2"
+pydevlpr = ">=0.2.3"
 ttkthemes = "^3.2.2"
 
 [tool.poetry.dev-dependencies]
