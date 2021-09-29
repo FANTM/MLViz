@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import logging
 from tkinter import Canvas
-from typing import Callable, List
+from typing import List
 
 import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from pydevlpr import add_callback, remove_callback, stop
+from pydevlpr import stop
 
 from DataPool import DATA_POOL
 from EventHandler import SAVE_FINISHED_EVENT, EventHandler
@@ -35,7 +34,7 @@ def main() -> None:
     plot = PlotManager(LayoutManager.NUM_ROWS)
     
     # create the form and show it without the plot
-    window: sg.Window = sg.Window('DEVLPR Data Pal',
+    window: sg.Window = sg.Window('MLViz',
                 layout(), use_ttk_buttons=True, finalize=True)
     
     # create the event overseer

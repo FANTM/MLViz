@@ -52,13 +52,18 @@ class EventHandler:
 
     def generate_connect_handler(self, index) -> EVENT_CALLBACK:
         def on_connect(window: sg.Window, values: Dict[str, Any]):
-            topic = values['topic_{}'.format(index)]
-            pin = int(window['pin_{}'.format(index)].metadata["pin"])
+            topic = values[LayoutManager.Key.TOPIC_TEMPLATE.format(index)]
+            pin = values[LayoutManager.Key.PIN_TEMPLATE.format(index)]
             try:
-                print(self.pydevlpr_callbacks)
-                self.pydevlpr_callbacks[index] = self.generate_pydevlpr_callback(index)
-                add_callback(topic, pin, self.pydevlpr_callbacks[index])
-                window['row_{}'.format(index)].update('{}'.format(topic))
+                if index in self.pydevlpr_callbacks.keys():
+                    remove_callback(self.pydevlpr_callbacks[index]["topic"], self.pydevlpr_callbacks[index]["pin"], self.pydevlpr_callbacks[index]["callback"])
+                self.pydevlpr_callbacks[index] = {   
+                        "topic": topic,
+                        "pin": pin,
+                        "callback": self.generate_pydevlpr_callback(index)
+                    }
+                add_callback(topic, pin, self.pydevlpr_callbacks[index]["callback"])
+                window[LayoutManager.Key.ROW_TEMPLATE.format(index)].update('{}'.format(topic))
                 col_w, col_h = window['canvas_col_{}'.format(index)].get_size()
                 self.plot.set_size_pixels(index, col_w, col_h)
             except Exception as e:
@@ -70,12 +75,11 @@ class EventHandler:
     def generate_disconnect_handler(self, index) -> EVENT_CALLBACK:
         def on_disconnect(window: sg.Window, values: Dict[str, Any]):
             try:
-                topic = values['topic_{}'.format(index)]
-                pin = int(window['pin_{}'.format(index)].metadata["pin"])
-                remove_callback(topic, pin, self.pydevlpr_callbacks[index])
-            except:
-                logging.error("failed: topic: {}, pin: {}".format(topic, pin))
-                sg.popup("Failed to remove the callback, try to set topic to the ")
+                remove_callback(self.pydevlpr_callbacks[index]["topic"], self.pydevlpr_callbacks[index]["pin"], self.pydevlpr_callbacks[index]["callback"])
+                del self.pydevlpr_callbacks[index]
+            except Exception as e:
+                logging.error(e)
+                sg.popup("Failed to remove the callback")
         return on_disconnect
 
     def handle_event(self, event, window, values):
