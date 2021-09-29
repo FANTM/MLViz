@@ -39,7 +39,7 @@ class EventHandler:
 
     def generate_pydevlpr_callback(self, index):
         def add_data(data: str):
-            DATA_POOL.append(index, int(data))
+            DATA_POOL.append(index, float(data))
         return add_data
 
     def generate_label_handlers(self, index) -> Tuple[EVENT_CALLBACK, EVENT_CALLBACK]:
@@ -66,6 +66,7 @@ class EventHandler:
                 window[LayoutManager.Key.ROW_TEMPLATE.format(index)].update('{}'.format(topic))
                 col_w, col_h = window['canvas_col_{}'.format(index)].get_size()
                 self.plot.set_size_pixels(index, col_w, col_h)
+                window[LayoutManager.Key.CONNECT_TEMPLATE.format(index)].update(disabled=True)
             except Exception as e:
                 logging.info("TOPIC: {} PIN: {}".format(topic, pin))
                 logging.error(e)

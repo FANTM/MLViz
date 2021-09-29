@@ -12,7 +12,7 @@ from EventHandler import SAVE_FINISHED_EVENT, EventHandler
 from LayoutManager import LayoutManager
 from PlotManager import PlotManager
 
-sg.theme('Reddit')
+#sg.theme('Reddit')
 
 # Yet another usage of MatPlotLib with animations.
 

@@ -1,4 +1,4 @@
-import pydevlpr_protocol
+import pydevlpr_protocol as pd
 import PySimpleGUI as sg
 from typing import List
 
@@ -30,11 +30,24 @@ class LayoutManager:
     NUM_LABELS = 5
 
     def __init__(self):
-        self._layout = [
+        self._record_layout = [
             [    # Rows!                
                 LayoutManager.RecordGestureColumn(),
                 LayoutManager.Body(LayoutManager.NUM_ROWS),
-            ],   # End rows
+            ]   # End rows
+        ]
+        self._train_layout = [[sg.T('This is inside the train tab')]]
+        self._test_layout = [[sg.T('This is inside the test tab')],[sg.T('It has two rows')]]
+        self._layout = [
+            [
+                sg.TabGroup([
+                    [
+                        sg.Tab('Record', self._record_layout),
+                        sg.Tab('Train', self._train_layout),
+                        sg.Tab('Test', self._test_layout)
+                    ]
+                ])
+            ]
         ]
 
     def __call__(self) -> List[sg.Element]:
@@ -71,7 +84,7 @@ class LayoutManager:
     @staticmethod
     def TopicSelect(index):
         return LayoutManager.Select(LayoutManager.Key.TOPIC_TEMPLATE.format(index), size=(14, None), 
-            values=pydevlpr_protocol.DataTopic.topics())
+            values=[pd.DataTopic.RAW_DATA_TOPIC, pd.DataTopic.NOTCH_60_TOPIC, pd.DataTopic.NOTCH_50_TOPIC])
 
     @staticmethod
     def Select(key, values, size=(14, None)):
@@ -121,7 +134,7 @@ class LayoutManager:
     def RecordGestureColumn():
         return sg.Column([[
             sg.Frame("Data Manager", [
-                *LayoutManager.NumPinSlider(),
+                #*LayoutManager.NumPinSlider(),
                 [sg.Text('Output Filename')],
                 [
                     sg.Input('data/recording.csv', key=LayoutManager.Key.FILENAME, size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button'])), 
