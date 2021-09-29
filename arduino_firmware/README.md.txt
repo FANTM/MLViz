@@ -1,0 +1,1 @@
+This was copied from the [devlprd Github repository](https://github.com/FANTM/devlprd) to have one consistent sketch to flash the Arduino for this project.
