@@ -10,8 +10,15 @@ class LayoutManager:
         STOP = 'stop'
         CLEAR = 'clear'
         SAVE = 'save'
+        TRAIN = 'train'
         FILENAME = 'filename'
+        TRAIN_FILENAME = 'trainfilename'
+        SAVEMODEL_FILENAME = 'savemodelfilename'
+        LOADMODEL_FILENAME = 'loadmodelfilename'
         DATA_MANAGER = 'datamanager'
+        TRAIN_MANAGER = 'trainmanager'
+        OPT_STANDARDIZE = 'opt_stand'
+        CLF_LINEARSVM = 'clf_linsvm'
         NUM_DEVLPRS = 'numdevlprs'
         BTN_PRESS = 'press'
         BTN_RLSE  = 'release'
@@ -26,28 +33,26 @@ class LayoutManager:
     FONT_FAMILY = 'Helvetica'
     FONT_SIZES = {'h1': 24, 'h2': 20, 'h3': 16,
                   'h4': 12, 'p': 10, 'button': 12}
-    NUM_ROWS = 3
-    NUM_LABELS = 5
+    NUM_ROWS = 2
+    NUM_LABELS = 4
 
     def __init__(self):
-        self._record_layout = [
-            [    # Rows!                
-                LayoutManager.RecordGestureColumn(),
-                LayoutManager.Body(LayoutManager.NUM_ROWS),
-            ]   # End rows
-        ]
-        self._train_layout = [[sg.T('This is inside the train tab')]]
+        self._record_layout = [[LayoutManager.RecordGestureColumn()]]
+        self._train_layout = [[LayoutManager.TrainColumn()]]
         self._test_layout = [[sg.T('This is inside the test tab')],[sg.T('It has two rows')]]
+        self._tabgroup_layout = [
+            sg.TabGroup([
+                [
+                    sg.Tab('Record Data', self._record_layout),
+                    sg.Tab('Train Model', self._train_layout),
+                    sg.Tab('Test Model', self._test_layout)
+                ]
+            ])
+        ]
+        self._plot_layout = LayoutManager.Body(LayoutManager.NUM_ROWS)
         self._layout = [
-            [
-                sg.TabGroup([
-                    [
-                        sg.Tab('Record', self._record_layout),
-                        sg.Tab('Train', self._train_layout),
-                        sg.Tab('Test', self._test_layout)
-                    ]
-                ])
-            ]
+            [sg.Column([self._tabgroup_layout]),
+            sg.Column(self._plot_layout)]
         ]
 
     def __call__(self) -> List[sg.Element]:
@@ -59,7 +64,7 @@ class LayoutManager:
 
     @staticmethod
     def Body(NUM_ROWS):
-        return sg.Column([LayoutManager.DataRow(i) for i in range(0, NUM_ROWS)])
+        return [LayoutManager.DataRow(i) for i in range(0, NUM_ROWS)]
 
     @staticmethod
     def Button(label, key=None, disabled=False, size=(None, None), pad=None):
@@ -103,16 +108,12 @@ class LayoutManager:
 
     @staticmethod
     def DataRow(index):
-        return sg.Frame('Row', key=LayoutManager.Key.ROW_TEMPLATE.format(index), expand_x=True, vertical_alignment="center", layout=[
+        return sg.Frame('EMG {}'.format(index), key=LayoutManager.Key.ROW_TEMPLATE.format(index), expand_x=True, vertical_alignment="center", layout=[
                     [
                         sg.Column([
-                            [
-                                LayoutManager.TopicSelect(index), LayoutManager.PinSelect(index), 
-                            ],
-                            [
-                                    LayoutManager.Button('Connect', size=(12, 1), key=LayoutManager.Key.CONNECT_TEMPLATE.format(index)),
-                                    LayoutManager.Button('Disconnect', size=(12, 1), key=LayoutManager.Key.DISCONNECT_TEMPLATE.format(index))
-                            ],
+                            [ LayoutManager.TopicSelect(index), LayoutManager.PinSelect(index) ],
+                            [ LayoutManager.Button('Connect', size=(12, 1), key=LayoutManager.Key.CONNECT_TEMPLATE.format(index)) ],
+                            [ LayoutManager.Button('Disconnect', size=(12, 1), key=LayoutManager.Key.DISCONNECT_TEMPLATE.format(index)) ],
                         ]),
                         sg.VerticalSeparator(),
                         sg.Column([
@@ -131,23 +132,43 @@ class LayoutManager:
                 size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button']))]
 
     @staticmethod
+    def FileSelect(input_txt, input_key):
+        finput = sg.Input(input_txt, key=input_key, size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button']))
+        fbrowse = sg.FileBrowse(font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button']))
+        return finput,fbrowse
+
+    @staticmethod
     def RecordGestureColumn():
-        return sg.Column([[
-            sg.Frame("Data Manager", [
-                #*LayoutManager.NumPinSlider(),
-                [sg.Text('Output Filename')],
-                [
-                    sg.Input('data/recording.csv', key=LayoutManager.Key.FILENAME, size=(22, None), font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button'])), 
-                    sg.FileBrowse( font=(LayoutManager.FONT_FAMILY, LayoutManager.FONT_SIZES['button']))
-                ],
-                [sg.Text('Labels')],
-                *[LayoutManager.LabelRow(i, 'label_{}'.format(i)) for i in range(0, LayoutManager.NUM_LABELS)],           
-                [
-                    LayoutManager.Button('Start', key=LayoutManager.Key.RECORD), 
-                    LayoutManager.Button('Pause', key=LayoutManager.Key.STOP), 
-                    LayoutManager.Button('Clear', key=LayoutManager.Key.CLEAR), 
-                    LayoutManager.Button('Save', key=LayoutManager.Key.SAVE), 
-                    LayoutManager.Button('Exit')
-                ]
-        ])]], 
-            vertical_alignment='top', key=LayoutManager.Key.DATA_MANAGER)
+        return sg.Column([
+            [sg.Text('Output Filename')],
+            [
+                *LayoutManager.FileSelect('data/recording.csv', LayoutManager.Key.FILENAME) # need to break the tuple with *
+            ],
+            [sg.Text('Labels')],
+            *[LayoutManager.LabelRow(i, 'label_{}'.format(i)) for i in range(0, LayoutManager.NUM_LABELS)],
+            [
+                LayoutManager.Button('Start', key=LayoutManager.Key.RECORD), 
+                LayoutManager.Button('Pause', key=LayoutManager.Key.STOP), 
+                LayoutManager.Button('Clear', key=LayoutManager.Key.CLEAR), 
+                LayoutManager.Button('Save', key=LayoutManager.Key.SAVE), 
+                LayoutManager.Button('Exit')
+            ]
+        ], vertical_alignment='top', key=LayoutManager.Key.DATA_MANAGER)
+
+    @staticmethod
+    def TrainColumn():
+        return sg.Column([
+            [sg.Text('Training Data Filename')],
+            [*LayoutManager.FileSelect('data/recording.csv', LayoutManager.Key.TRAIN_FILENAME)], # need to break tuple with *
+            [sg.Text('Output Model Filename')],
+            [*LayoutManager.FileSelect('models/recording.model', LayoutManager.Key.SAVEMODEL_FILENAME)], # need to break tuple with *
+            [sg.Text('Options')],
+            [
+                sg.Checkbox('Standardize', default=True, key=LayoutManager.Key.OPT_STANDARDIZE)
+            ],
+            [sg.Text('Classifier')],
+            [
+                sg.Radio('Linear SVM', group_id='clf', default=True, key=LayoutManager.Key.CLF_LINEARSVM)
+            ],
+            [LayoutManager.Button('Train', key=LayoutManager.Key.TRAIN)]
+        ], vertical_alignment='top', key=LayoutManager.Key.TRAIN_MANAGER)

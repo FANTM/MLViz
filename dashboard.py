@@ -35,7 +35,7 @@ def main() -> None:
     
     # create the form and show it without the plot
     window: sg.Window = sg.Window('MLViz',
-                layout(), use_ttk_buttons=True, finalize=True)
+                layout(), location=(100,100), use_ttk_buttons=True, finalize=True)
     
     # create the event overseer
     event_handlers = EventHandler(window, plot)
