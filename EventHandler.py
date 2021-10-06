@@ -5,6 +5,7 @@ import PySimpleGUI as sg
 from DataPool import DATA_POOL, DataPool
 from LayoutManager import LayoutManager
 from pydevlpr import add_callback, remove_callback
+from ml_tools import start_training_job, MLOptions
 
 
 EVENT_CALLBACK = Callable[[sg.Window, Dict[str, Any]], None]
@@ -21,6 +22,7 @@ class EventHandler:
             LayoutManager.Key.CLEAR: EventHandler.on_clear,
             LayoutManager.Key.SAVE: EventHandler.on_save,
             LayoutManager.Key.NUM_DEVLPRS: EventHandler.on_num_devlprs_change,
+            LayoutManager.Key.TRAIN: EventHandler.on_train,
         }
         for i in range(0, LayoutManager.NUM_ROWS):
             connect_key = LayoutManager.Key.CONNECT_TEMPLATE.format(i)
@@ -119,6 +121,22 @@ class EventHandler:
             t.start()
         except Exception as e:
             sg.Popup("Failed to write to file: {}".format(e))
+
+    @staticmethod
+    def on_train(window: sg.Window, values: Dict[str, Any]) -> None:
+        # grab the training data filename and the output model filename
+        data_fname = values[LayoutManager.Key.TRAIN_FILENAME]
+        modl_fname = values[LayoutManager.Key.SAVEMODEL_FILENAME]
+        # create an MLOptions object for our training thread
+        ml_opts = MLOptions(data_fname, modl_fname)
+        # set any options that are available
+        ml_opts.set_standardize(window[LayoutManager.Key.OPT_STANDARDIZE].get())
+        # and mark the selected classifier
+        if window[LayoutManager.Key.CLF_LINEARSVM].get():
+            ml_opts.linearsvc()
+        # and grab the train button to be updated
+        train_btn = window[LayoutManager.Key.TRAIN]
+        start_training_job(ml_opts, train_btn)
 
     # TODO Making number of channels dynamic is surprisingly hard.
     @staticmethod

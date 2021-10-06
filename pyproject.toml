@@ -13,6 +13,7 @@ devlprd = ">=0.3.1"
 matplotlib = "^3.4.3"
 pydevlpr = ">=0.2.3"
 ttkthemes = "^3.2.2"
+scikit-learn = "^1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
