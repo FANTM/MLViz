@@ -26,6 +26,34 @@ class MLOptions:
     def set_standardize(self, onoff):
         self.opt_standardize = onoff
 
+# dumb global for now
+class MLResources:
+    _POOL = None
+    _MODEL = None
+
+    def cleanup():
+        if MLResources._POOL is not None:
+            MLResources._POOL.close()
+            MLResources._POOL = None
+
+    def initialize():
+        MLResources._POOL = multiprocessing.Pool()
+
+    def proc_pool():
+        return MLResources._POOL
+
+    def load_model(model_fname):
+        with open(model_fname, 'r+b') as infile:
+            MLResources._MODEL = pickle.load(infile)
+
+    def ml_model():
+        return MLResources._MODEL
+
+    def start_training_job(ml_options, train_btn):
+        # spawn a thread to spin off actual process and maintain interface needs
+        train_thread = threading.Thread(target=train_thread_main, args=[ml_options, train_btn], daemon=True)
+        train_thread.start()
+
 def pull_next_sample(gest_arr, emg0_arr, emg1_arr, start_ind):
     N = len(gest_arr)
     if start_ind >= N:
@@ -140,18 +168,10 @@ def train_process_main(ml_options):
         pickle.dump(clf, file=outfile)
 
 def train_thread_main(ml_options, train_btn):
-    # want to be able to do things with the interface here when things start and finish
-    # want all of the actual work to be done in a separate process
-    train_proc = multiprocessing.Process(target=train_process_main, args=[ml_options], daemon=True)
     # disable the train button to prevent multiple clicks
     train_btn.update(disabled=True)
     # start and wait for the process
-    train_proc.start()
-    train_proc.join()
+    res = MLResources.proc_pool().apply_async(func=train_process_main, args=[ml_options])
+    res.wait()
     # and re-enable the button
     train_btn.update(disabled=False)
-
-def start_training_job(ml_options, train_btn):
-    # spawn a thread that will do spin off actual process and maintain interface needs
-    train_thread = threading.Thread(target=train_thread_main, args=[ml_options, train_btn], daemon=True)
-    train_thread.start()

@@ -11,12 +11,14 @@ class LayoutManager:
         CLEAR = 'clear'
         SAVE = 'save'
         TRAIN = 'train'
+        LOAD = 'load'
         FILENAME = 'filename'
         TRAIN_FILENAME = 'trainfilename'
         SAVEMODEL_FILENAME = 'savemodelfilename'
         LOADMODEL_FILENAME = 'loadmodelfilename'
         DATA_MANAGER = 'datamanager'
         TRAIN_MANAGER = 'trainmanager'
+        TEST_MANAGER = 'testmanager'
         OPT_STANDARDIZE = 'opt_stand'
         CLF_LINEARSVM = 'clf_linsvm'
         NUM_DEVLPRS = 'numdevlprs'
@@ -39,7 +41,7 @@ class LayoutManager:
     def __init__(self):
         self._record_layout = [[LayoutManager.RecordGestureColumn()]]
         self._train_layout = [[LayoutManager.TrainColumn()]]
-        self._test_layout = [[sg.T('This is inside the test tab')],[sg.T('It has two rows')]]
+        self._test_layout = [[LayoutManager.TestColumn()]]
         self._tabgroup_layout = [
             sg.TabGroup([
                 [
@@ -172,3 +174,16 @@ class LayoutManager:
             ],
             [LayoutManager.Button('Train', key=LayoutManager.Key.TRAIN)]
         ], vertical_alignment='top', key=LayoutManager.Key.TRAIN_MANAGER)
+
+    @staticmethod
+    def TestColumn():
+        return sg.Column([
+            [sg.Text('Trained Model Filename')],
+            [*LayoutManager.FileSelect('models/recording.model', LayoutManager.Key.LOADMODEL_FILENAME)], # need to break tuple with *
+            [LayoutManager.Button('Load Model', key=LayoutManager.Key.LOAD)],
+            [sg.Frame('Predicted Gesture',
+                [
+                    [sg.Text('--', justification='center', expand_x=True)]
+                ],
+            expand_x=True)]
+        ], vertical_alignment='top', key=LayoutManager.Key.TEST_MANAGER)

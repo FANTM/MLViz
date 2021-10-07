@@ -6,6 +6,7 @@ import PySimpleGUI as sg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from pydevlpr import stop
+from ml_tools import MLResources
 
 from DataPool import DATA_POOL
 from EventHandler import SAVE_FINISHED_EVENT, EventHandler
@@ -51,7 +52,9 @@ def main() -> None:
 
     window.read(timeout=0)
     window.un_hide()
-    # make a bunch of random data points
+    # need to initialize the ML resources
+    MLResources.initialize()
+    # spin forever until exit
     while True:
         event, values = window.read(timeout=10)
         if event in ('Exit', None):
@@ -71,6 +74,7 @@ def main() -> None:
             update_plot(plot, i, fig_aggs[i])
         
     stop()
+    MLResources.cleanup()
     window.close()
 
 if __name__ == '__main__':

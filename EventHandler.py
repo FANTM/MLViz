@@ -5,7 +5,7 @@ import PySimpleGUI as sg
 from DataPool import DATA_POOL, DataPool
 from LayoutManager import LayoutManager
 from pydevlpr import add_callback, remove_callback
-from ml_tools import start_training_job, MLOptions
+from ml_tools import MLOptions, MLResources
 
 
 EVENT_CALLBACK = Callable[[sg.Window, Dict[str, Any]], None]
@@ -23,6 +23,7 @@ class EventHandler:
             LayoutManager.Key.SAVE: EventHandler.on_save,
             LayoutManager.Key.NUM_DEVLPRS: EventHandler.on_num_devlprs_change,
             LayoutManager.Key.TRAIN: EventHandler.on_train,
+            LayoutManager.Key.LOAD: EventHandler.on_load_model,
         }
         for i in range(0, LayoutManager.NUM_ROWS):
             connect_key = LayoutManager.Key.CONNECT_TEMPLATE.format(i)
@@ -136,7 +137,15 @@ class EventHandler:
             ml_opts.linearsvc()
         # and grab the train button to be updated
         train_btn = window[LayoutManager.Key.TRAIN]
-        start_training_job(ml_opts, train_btn)
+        MLResources.start_training_job(ml_opts, train_btn)
+
+    @staticmethod
+    def on_load_model(window: sg.Window, values: Dict[str, Any]) -> None:
+        # grab the desired model file
+        model_fname = values[LayoutManager.Key.LOADMODEL_FILENAME]
+        # pass that sucker along
+        MLResources.load_model(model_fname)
+        print(MLResources.ml_model())
 
     # TODO Making number of channels dynamic is surprisingly hard.
     @staticmethod
