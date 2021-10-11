@@ -8,7 +8,7 @@ class DataPool:
         self.record_buffers: List[List[float]] = [list() for _ in range(0, size)]
         self.size: int = size
         self.label: str = "None"
-        self.circular_buffers: List[Deque[float]] = [deque(maxlen=3000) for _ in range(0, size)]
+        self.circular_buffers: List[Deque[float]] = [deque(maxlen=2000) for _ in range(0, size)]
         self.recording: bool = False
 
     def append(self, pin: int, data: float):

@@ -3,10 +3,12 @@ import math
 import threading
 import multiprocessing
 import pickle
+import time
 import numpy as np
 
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 class MLOptions:
 
@@ -30,14 +32,18 @@ class MLOptions:
 class MLResources:
     _POOL = None
     _MODEL = None
+    _TEST_THREAD = None
+    _DATA_POOL = None
 
     def cleanup():
         if MLResources._POOL is not None:
             MLResources._POOL.close()
             MLResources._POOL = None
+        MLResources._DATA_POOL = None
 
-    def initialize():
+    def initialize(data_pool):
         MLResources._POOL = multiprocessing.Pool()
+        MLResources._DATA_POOL = data_pool
 
     def proc_pool():
         return MLResources._POOL
@@ -53,6 +59,10 @@ class MLResources:
         # spawn a thread to spin off actual process and maintain interface needs
         train_thread = threading.Thread(target=train_thread_main, args=[ml_options, train_btn], daemon=True)
         train_thread.start()
+
+    def start_testing_job(data_pool, prediction_txt):
+        MLResources._TEST_THREAD = threading.Thread(target=test_thread_main, args=[data_pool, prediction_txt], daemon=True)
+        MLResources._TEST_THREAD.start()
 
 def pull_next_sample(gest_arr, emg0_arr, emg1_arr, start_ind):
     N = len(gest_arr)
@@ -94,9 +104,8 @@ def mean_zero_crossings(arr):
             zc_cnt += 1
     return zc_cnt / len(arr)
 
-def process_sample_seq(gest_arr, emg0_arr, emg1_arr):
-    g = gest_arr[0] # these are all the same value
-    # now grab the features for emg0
+def process_sample_seq(emg0_arr, emg1_arr):
+    # grab the features for emg0
     maa0 = mean_absolute_amplitude(emg0_arr)
     mwl0 = mean_waveform_length(emg0_arr)
     msc0 = mean_slope_changes(emg0_arr)
@@ -106,7 +115,7 @@ def process_sample_seq(gest_arr, emg0_arr, emg1_arr):
     mwl1 = mean_waveform_length(emg1_arr)
     msc1 = mean_slope_changes(emg1_arr)
     mzc1 = mean_zero_crossings(emg1_arr)
-    return (g, maa0, mwl0, msc0, mzc0, maa1, mwl1, msc1, mzc1)
+    return (maa0, mwl0, msc0, mzc0, maa1, mwl1, msc1, mzc1)
 
 def read_data_file(fname):
     gest = list()
@@ -126,17 +135,6 @@ def read_data_file(fname):
             emg1.append(float(parts[emg1_ind]))
     return (gest,emg0,emg1)
 
-def standardize_data(x):
-    sscaler = StandardScaler()
-    x = sscaler.fit_transform(x)
-    return x
-
-def train_linear_svc(x, y):
-    # fit the model
-    clf = LinearSVC()
-    clf.fit(x, y)
-    return clf
-
 def convert_to_feat_vectors(gest, emg0, emg1):
     # we need to go through the sequence and process each example
     # each example is a varying-length seq of emg samples
@@ -145,10 +143,10 @@ def convert_to_feat_vectors(gest, emg0, emg1):
     start_ind = 0
     while start_ind < len(gest):
         curr_gest,curr_emg0,curr_emg1,start_ind = pull_next_sample(gest, emg0, emg1, start_ind)
-        label_feats = process_sample_seq(curr_gest, curr_emg0, curr_emg1)
-        # label is the first element
-        y.append(label_feats[0])
-        x.append(label_feats[1:])
+        feats = process_sample_seq(curr_emg0, curr_emg1)
+        # label is the same for all of curr_gest
+        y.append(curr_gest[0])
+        x.append(feats)
     return np.array(x),np.array(y)
 
 def train_process_main(ml_options):
@@ -156,13 +154,17 @@ def train_process_main(ml_options):
     gest,emg0,emg1 = read_data_file(ml_options.data_fname)
     # now convert those to features
     x,y = convert_to_feat_vectors(gest, emg0, emg1)
+    # need to construct a pipeline for consistent future use
+    estimators = []
     # standarize if we're going to
     if ml_options.opt_standardize:
-        x = standardize_data(x)
-    # train a model with those
-    clf = None
+        estimators.append(('standardize', StandardScaler()))
+    # pick a predictor
     if ml_options.linearsvc: # choose LinearSVC
-        clf = train_linear_svc(x, y)
+        estimators.append(('linear_svm', LinearSVC()))
+    # and train
+    clf = Pipeline(estimators)
+    clf.fit(x, y)
     # and pickle that model for later
     with open(ml_options.model_fname, 'w+b') as outfile:
         pickle.dump(clf, file=outfile)
@@ -175,3 +177,10 @@ def train_thread_main(ml_options, train_btn):
     res.wait()
     # and re-enable the button
     train_btn.update(disabled=False)
+
+def predict_func(clf, emg_data):
+    pass
+
+def test_thread_main(data_pool, prediction_txt):
+    last_predict_time = 0
+    pass
