@@ -6,6 +6,8 @@ import pickle
 import time
 import numpy as np
 
+from LayoutManager import LayoutManager
+
 from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -30,23 +32,44 @@ class MLOptions:
 
 # dumb global for now
 class MLResources:
-    _POOL = None
+    _PROC_POOL = None
     _MODEL = None
     _TEST_THREAD = None
     _DATA_POOL = None
+    _INITED = False
+    _WINDOW = None
+
+    def initialize(data_pool, window):
+        MLResources._INITED = True
+        MLResources._PROC_POOL = multiprocessing.Pool()
+        MLResources._DATA_POOL = data_pool
+        # this is so we can access gui/event stuff
+        MLResources._WINDOW = window
+        # start the test thread - it just runs and predicts while a model is loaded
+        # need the prediction label box of the gui
+        MLResources._TEST_THREAD = threading.Thread(target=test_thread_main, args=[], daemon=True)
+        MLResources._TEST_THREAD.start()
 
     def cleanup():
-        if MLResources._POOL is not None:
-            MLResources._POOL.close()
-            MLResources._POOL = None
+        MLResources._INITED = False
+        if MLResources._PROC_POOL is not None:
+            MLResources._PROC_POOL.close()
+            MLResources._PROC_POOL = None
         MLResources._DATA_POOL = None
-
-    def initialize(data_pool):
-        MLResources._POOL = multiprocessing.Pool()
-        MLResources._DATA_POOL = data_pool
+        MLResources._MODEL = None
+        MLResources._WINDOW = None
+        try:
+            MLResources._TEST_THREAD.join(timeout=1)
+            MLResources._TEST_THREAD = None
+        except:
+            # daemon should just terminate anyway
+            MLResources._TEST_THREAD = None
 
     def proc_pool():
-        return MLResources._POOL
+        return MLResources._PROC_POOL
+
+    def data_pool():
+        return MLResources._DATA_POOL
 
     def load_model(model_fname):
         with open(model_fname, 'r+b') as infile:
@@ -60,9 +83,8 @@ class MLResources:
         train_thread = threading.Thread(target=train_thread_main, args=[ml_options, train_btn], daemon=True)
         train_thread.start()
 
-    def start_testing_job(data_pool, prediction_txt):
-        MLResources._TEST_THREAD = threading.Thread(target=test_thread_main, args=[data_pool, prediction_txt], daemon=True)
-        MLResources._TEST_THREAD.start()
+    def _update_prediction(pred):
+        MLResources._WINDOW.write_event_value(LayoutManager.Key.PREDICTION_TEXT, pred[0])
 
 def pull_next_sample(gest_arr, emg0_arr, emg1_arr, start_ind):
     N = len(gest_arr)
@@ -104,18 +126,13 @@ def mean_zero_crossings(arr):
             zc_cnt += 1
     return zc_cnt / len(arr)
 
-def process_sample_seq(emg0_arr, emg1_arr):
-    # grab the features for emg0
-    maa0 = mean_absolute_amplitude(emg0_arr)
-    mwl0 = mean_waveform_length(emg0_arr)
-    msc0 = mean_slope_changes(emg0_arr)
-    mzc0 = mean_zero_crossings(emg0_arr)
-    # and the features for emg1
-    maa1 = mean_absolute_amplitude(emg1_arr)
-    mwl1 = mean_waveform_length(emg1_arr)
-    msc1 = mean_slope_changes(emg1_arr)
-    mzc1 = mean_zero_crossings(emg1_arr)
-    return (maa0, mwl0, msc0, mzc0, maa1, mwl1, msc1, mzc1)
+def process_sample_seq(emg_arr):
+    # grab the features
+    maa = mean_absolute_amplitude(emg_arr)
+    mwl = mean_waveform_length(emg_arr)
+    msc = mean_slope_changes(emg_arr)
+    mzc = mean_zero_crossings(emg_arr)
+    return (maa, mwl, msc, mzc)
 
 def read_data_file(fname):
     gest = list()
@@ -143,7 +160,7 @@ def convert_to_feat_vectors(gest, emg0, emg1):
     start_ind = 0
     while start_ind < len(gest):
         curr_gest,curr_emg0,curr_emg1,start_ind = pull_next_sample(gest, emg0, emg1, start_ind)
-        feats = process_sample_seq(curr_emg0, curr_emg1)
+        feats = process_sample_seq(curr_emg0) + process_sample_seq(curr_emg1)
         # label is the same for all of curr_gest
         y.append(curr_gest[0])
         x.append(feats)
@@ -178,9 +195,33 @@ def train_thread_main(ml_options, train_btn):
     # and re-enable the button
     train_btn.update(disabled=False)
 
-def predict_func(clf, emg_data):
-    pass
+def predict_cback(result):
+    MLResources._update_prediction(result)
 
-def test_thread_main(data_pool, prediction_txt):
+def predict_func(clf, emg_data):
+    # need to turn emg data into features
+    feats = ()
+    for e in emg_data:
+        feats += process_sample_seq(e)
+    label = clf.predict(np.array([list(feats)]))
+    return label
+
+def test_thread_main():
+    SEC_PER_TICK = 1.0 / 4
     last_predict_time = 0
-    pass
+    # we're going to loop and predict every tick
+    while MLResources._INITED:
+        curr_time = time.time()
+        clf = MLResources.ml_model()
+        # do we need to tick
+        time_reached = (curr_time - last_predict_time) >= SEC_PER_TICK
+        model_loaded = clf is not None
+        if time_reached and model_loaded:
+            # need to do a prediction
+            # grab the predict buffers first
+            emg_data = MLResources.data_pool().get_prediction_buffers()
+            _ = MLResources.proc_pool().apply_async(func=predict_func, args=[clf, emg_data], callback=predict_cback)
+            # update our last tick time
+            last_predict_time = curr_time
+        # we can sleep for a bit here
+        time.sleep(.05)

@@ -53,7 +53,7 @@ def main() -> None:
     window.read(timeout=0)
     window.un_hide()
     # need to initialize the ML resources
-    MLResources.initialize(DATA_POOL)
+    MLResources.initialize(DATA_POOL, window)
     # spin forever until exit
     while True:
         event, values = window.read(timeout=10)

@@ -19,6 +19,7 @@ class LayoutManager:
         DATA_MANAGER = 'datamanager'
         TRAIN_MANAGER = 'trainmanager'
         TEST_MANAGER = 'testmanager'
+        PREDICTION_TEXT = 'predtxt'
         OPT_STANDARDIZE = 'opt_stand'
         CLF_LINEARSVM = 'clf_linsvm'
         NUM_DEVLPRS = 'numdevlprs'
@@ -183,7 +184,7 @@ class LayoutManager:
             [LayoutManager.Button('Load Model', key=LayoutManager.Key.LOAD)],
             [sg.Frame('Predicted Gesture',
                 [
-                    [sg.Text('--', justification='center', expand_x=True)]
+                    [sg.Text('--', justification='center', expand_x=True, key=LayoutManager.Key.PREDICTION_TEXT)]
                 ],
             expand_x=True)]
         ], vertical_alignment='top', key=LayoutManager.Key.TEST_MANAGER)

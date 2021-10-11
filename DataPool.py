@@ -10,12 +10,15 @@ class DataPool:
         self.label: str = "None"
         self.circular_buffers: List[Deque[float]] = [deque(maxlen=2000) for _ in range(0, size)]
         self.recording: bool = False
+        # want some smaller circular buffers just for prediction windows
+        self.prediction_buffers: List[Deque[float]] = [deque(maxlen=500) for _ in range(0, size)]
 
     def append(self, pin: int, data: float):
         try:
             if self.recording:
                 self.record_buffers[pin].append({"label": self.label, "data": data})
             self.circular_buffers[pin].append(data)
+            self.prediction_buffers[pin].append(data)
         except IndexError:
             logging.error("Improper data pool access, buffer doesn't exist")
         
@@ -32,5 +35,8 @@ class DataPool:
         for i in range(0, min_len):
             payload.append("{},{}\n".format(str(non_zero_buffers[0][i]["label"]), ",".join( [str(non_zero_buffers[j][i]["data"]) for j in range(0, num_buffers)])))
         return payload
+
+    def get_prediction_buffers(self) -> List[List[float]]:
+        return [list(dq) for dq in self.prediction_buffers]
 
 DATA_POOL = DataPool(LayoutManager.NUM_ROWS)

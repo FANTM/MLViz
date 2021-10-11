@@ -24,6 +24,7 @@ class EventHandler:
             LayoutManager.Key.NUM_DEVLPRS: EventHandler.on_num_devlprs_change,
             LayoutManager.Key.TRAIN: EventHandler.on_train,
             LayoutManager.Key.LOAD: EventHandler.on_load_model,
+            LayoutManager.Key.PREDICTION_TEXT: EventHandler.on_prediction_update,
         }
         for i in range(0, LayoutManager.NUM_ROWS):
             connect_key = LayoutManager.Key.CONNECT_TEMPLATE.format(i)
@@ -145,7 +146,11 @@ class EventHandler:
         model_fname = values[LayoutManager.Key.LOADMODEL_FILENAME]
         # pass that sucker along
         MLResources.load_model(model_fname)
-        print(MLResources.ml_model())
+
+    @staticmethod
+    def on_prediction_update(window: sg.Window, values: Dict[str, Any]) -> None:
+        pred = values[LayoutManager.Key.PREDICTION_TEXT]
+        window[LayoutManager.Key.PREDICTION_TEXT].update(value=pred)
 
     # TODO Making number of channels dynamic is surprisingly hard.
     @staticmethod
