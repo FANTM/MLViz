@@ -5,13 +5,15 @@ import logging
 
 class DataPool:
     def __init__(self, size: int):
+        VIZ_BUF_SIZE = 2000
+        PRED_BUF_SIZE = 700
         self.record_buffers: List[List[float]] = [list() for _ in range(0, size)]
         self.size: int = size
         self.label: str = "None"
-        self.circular_buffers: List[Deque[float]] = [deque(maxlen=2000) for _ in range(0, size)]
+        self.circular_buffers: List[Deque[float]] = [deque([0.0]*VIZ_BUF_SIZE, maxlen=VIZ_BUF_SIZE) for _ in range(0, size)]
         self.recording: bool = False
         # want some smaller circular buffers just for prediction windows
-        self.prediction_buffers: List[Deque[float]] = [deque(maxlen=500) for _ in range(0, size)]
+        self.prediction_buffers: List[Deque[float]] = [deque([0.0]*PRED_BUF_SIZE, maxlen=PRED_BUF_SIZE) for _ in range(0, size)]
 
     def append(self, pin: int, data: float):
         try:

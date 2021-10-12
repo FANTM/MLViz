@@ -24,7 +24,8 @@ class EventHandler:
             LayoutManager.Key.NUM_DEVLPRS: EventHandler.on_num_devlprs_change,
             LayoutManager.Key.TRAIN: EventHandler.on_train,
             LayoutManager.Key.LOAD: EventHandler.on_load_model,
-            LayoutManager.Key.PREDICTION_TEXT: EventHandler.on_prediction_update,
+            LayoutManager.Key.EVT_UPDATE_PREDICTION: EventHandler.on_prediction_update,
+            LayoutManager.Key.EVT_DISABLE_TRAIN_BTN: EventHandler.on_disable_train_btn,
         }
         for i in range(0, LayoutManager.NUM_ROWS):
             connect_key = LayoutManager.Key.CONNECT_TEMPLATE.format(i)
@@ -136,9 +137,13 @@ class EventHandler:
         # and mark the selected classifier
         if window[LayoutManager.Key.CLF_LINEARSVM].get():
             ml_opts.linearsvc()
-        # and grab the train button to be updated
-        train_btn = window[LayoutManager.Key.TRAIN]
-        MLResources.start_training_job(ml_opts, train_btn)
+        MLResources.start_training_job(ml_opts)
+
+    #staticmethod
+    def on_disable_train_btn(window: sg.Window, values: Dict[str, Any]) -> None:
+        # grab the boolean for enable or disable
+        disable = values[LayoutManager.Key.EVT_DISABLE_TRAIN_BTN]
+        window[LayoutManager.Key.TRAIN].update(disabled=disable)
 
     @staticmethod
     def on_load_model(window: sg.Window, values: Dict[str, Any]) -> None:
@@ -149,7 +154,7 @@ class EventHandler:
 
     @staticmethod
     def on_prediction_update(window: sg.Window, values: Dict[str, Any]) -> None:
-        pred = values[LayoutManager.Key.PREDICTION_TEXT]
+        pred = values[LayoutManager.Key.EVT_UPDATE_PREDICTION]
         window[LayoutManager.Key.PREDICTION_TEXT].update(value=pred)
 
     # TODO Making number of channels dynamic is surprisingly hard.

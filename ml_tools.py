@@ -78,13 +78,16 @@ class MLResources:
     def ml_model():
         return MLResources._MODEL
 
-    def start_training_job(ml_options, train_btn):
+    def start_training_job(ml_options):
         # spawn a thread to spin off actual process and maintain interface needs
-        train_thread = threading.Thread(target=train_thread_main, args=[ml_options, train_btn], daemon=True)
+        train_thread = threading.Thread(target=train_thread_main, args=[ml_options], daemon=True)
         train_thread.start()
 
     def _update_prediction(pred):
-        MLResources._WINDOW.write_event_value(LayoutManager.Key.PREDICTION_TEXT, pred[0])
+        MLResources._WINDOW.write_event_value(LayoutManager.Key.EVT_UPDATE_PREDICTION, pred[0])
+
+    def _disable_train_button(disable):
+        MLResources._WINDOW.write_event_value(LayoutManager.Key.EVT_DISABLE_TRAIN_BTN, disable)
 
 def pull_next_sample(gest_arr, emg0_arr, emg1_arr, start_ind):
     N = len(gest_arr)
@@ -186,14 +189,14 @@ def train_process_main(ml_options):
     with open(ml_options.model_fname, 'w+b') as outfile:
         pickle.dump(clf, file=outfile)
 
-def train_thread_main(ml_options, train_btn):
+def train_thread_main(ml_options):
     # disable the train button to prevent multiple clicks
-    train_btn.update(disabled=True)
+    MLResources._disable_train_button(True)
     # start and wait for the process
     res = MLResources.proc_pool().apply_async(func=train_process_main, args=[ml_options])
     res.wait()
     # and re-enable the button
-    train_btn.update(disabled=False)
+    MLResources._disable_train_button(False)
 
 def predict_cback(result):
     MLResources._update_prediction(result)
@@ -207,7 +210,7 @@ def predict_func(clf, emg_data):
     return label
 
 def test_thread_main():
-    SEC_PER_TICK = 1.0 / 4
+    SEC_PER_TICK = 1.0 / 3
     last_predict_time = 0
     # we're going to loop and predict every tick
     while MLResources._INITED:

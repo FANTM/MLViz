@@ -45,9 +45,9 @@ def main() -> None:
     fig_aggs: List[FigureCanvasTkAgg] = []
     canvases: List[Canvas] = []
 
-    for i in range(0, LayoutManager.NUM_ROWS):    
+    for i in range(0, LayoutManager.NUM_ROWS):
         canvas_elem = window['canvas_{}'.format(i)]
-        canvases.append(canvas_elem.TKCanvas)
+        canvases.append(canvas_elem.tk_canvas)
         fig_aggs.append(draw_figure(canvases[i], plot.fig(i)))
 
     window.read(timeout=0)

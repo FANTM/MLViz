@@ -32,6 +32,8 @@ class LayoutManager:
         PIN_TEMPLATE = 'pin{}'
         TOPIC_TEMPLATE = 'topic{}'
         ROW_TEMPLATE = 'row{}'
+        EVT_UPDATE_PREDICTION = 'evt_upred'
+        EVT_DISABLE_TRAIN_BTN = 'evt_dsbltr'
         
     FONT_FAMILY = 'Helvetica'
     FONT_SIZES = {'h1': 24, 'h2': 20, 'h3': 16,
