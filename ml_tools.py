@@ -181,7 +181,7 @@ def train_process_main(ml_options):
         estimators.append(('standardize', StandardScaler()))
     # pick a predictor
     if ml_options.linearsvc: # choose LinearSVC
-        estimators.append(('linear_svm', LinearSVC()))
+        estimators.append(('linear_svm', LinearSVC(max_iter=2000)))
     # and train
     clf = Pipeline(estimators)
     clf.fit(x, y)
